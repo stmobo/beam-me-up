@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from bottle import get, post, request, response, route, run, static_file
 import os.path
 import os
@@ -7,6 +9,7 @@ from io import BytesIO
 import qrcode
 
 ip_pattern = r'inet6?\s+((?:[a-f0-9]+\:\:)?(?:[a-f0-9]+[\.\:]?)+)'
+
 host = '0.0.0.0'
 port = 8080
 
