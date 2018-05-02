@@ -1,8 +1,63 @@
-from bottle import get, post, request, route, run, static_file
+from bottle import get, post, request, response, route, run, static_file
 import os.path
 import os
+import subprocess as sp
+import re
+from io import BytesIO
+import qrcode
+
+ip_pattern = r'inet6?\s+((?:[a-f0-9]+\:\:)?(?:[a-f0-9]+[\.\:]?)+)'
+host = '0.0.0.0'
+port = 8080
+
+show_hotspot_code = True
+hotspot_ssid = 'a laptop somewhere'
+hotspot_crypto = 'WPA'
+hotspot_password = 'thisisapassword?'
+
+def get_ips():
+    stdout = sp.run(['ip', 'addr', 'show'], stdout=sp.PIPE).stdout
+
+    ips = []
+
+    for match in re.finditer(ip_pattern, stdout.decode('utf-8')):
+        addr = match.group(1)
+
+        if addr != '127.0.0.1':
+            ips.append(addr)
+
+    return ips
 
 file_dir = './files'
+
+if not os.path.exists(file_dir):
+    os.mkdir(file_dir)
+
+@route('/qr.png')
+def qr():
+    ip = get_ips()[0]
+
+    qr_img = qrcode.make('http://{}:{}'.format(ip, port))
+
+    img_io = BytesIO()
+    qr_img.save(img_io, 'PNG')
+    img_io.seek(0)
+
+    response.set_header('Content-Type', 'image/png')
+
+    return img_io
+
+@route('/network.png')
+def qr2():
+    qr_img = qrcode.make('WIFI:T:'+hotspot_crypto+';S:'+hotspot_ssid+';P:'+hotspot_password+';;')
+
+    img_io = BytesIO()
+    qr_img.save(img_io, 'PNG')
+    img_io.seek(0)
+
+    response.set_header('Content-Type', 'image/png')
+
+    return img_io
 
 @route('/static/<filename:path>')
 def statics(filename):
@@ -26,17 +81,35 @@ def get_receive_links():
     r = ''
 
     for f in receivable_files():
-        r += "<div><a href=\"/recv/{}\">{}</div>".format(f.name, f.name)
+        r += "<div><a href=\"/recv/{}\">{}</a></div>".format(f.name, f.name)
 
     return r
 
 @get('/')
 def index():
+    network_code = r"""
+        <div class="container">
+            <h2>Scan to connect to this laptop's hotspot:</h2>
+            <img src="/network.png" />
+        </div>
+    """
+
+    if not show_hotspot_code:
+        network_code = ""
+
     return r"""
 <html>
     <head>
             <meta charset="utf-8">
             <title>Beam Me Up!</title>
+            <style>
+                div.container {
+                    display: inline-block;
+                }
+                h2 {
+                    text-align: center;
+                }
+            </style>
     </head>
     <script src="js/jquery-3.3.1.js"></script>
     <script src="js/vendor/jquery.ui.widget.js"></script>
@@ -78,6 +151,11 @@ def index():
         Receivable files:
         """+get_receive_links()+r"""
         </div>
+        """+network_code+"""
+        <div class="container">
+            <h2>Scan to go to this webpage:</h2>
+            <img src="/qr.png" />
+        </div>
     </body>
 </html>
 """
@@ -109,4 +187,4 @@ def receive_file():
         print("Receiving {} bytes --> {}".format(upload.content_length, filename))
         upload.save(dest_path)
 
-run(host='0.0.0.0', port=8080)
+run(host=host, port=port)
