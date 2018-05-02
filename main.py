@@ -144,6 +144,7 @@ def index():
         $(upload)
     </script>
     <body>
+        <h1>Beam Me Up! -- a simple file transfer application</h1>
         <form action="/xmit" method="post" enctype="multipart/form-data">
             <div>
                 Select a file: <input type="file" name="upload" id="upload" />
