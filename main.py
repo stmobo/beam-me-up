@@ -18,6 +18,12 @@ hotspot_ssid = 'a laptop somewhere'
 hotspot_crypto = 'WPA'
 hotspot_password = 'thisisapassword?'
 
+file_dir = './files'
+
+if not os.path.exists(file_dir):
+    os.mkdir(file_dir)
+
+
 def get_ips():
     stdout = sp.run(['ip', 'addr', 'show'], stdout=sp.PIPE).stdout
 
@@ -31,16 +37,13 @@ def get_ips():
 
     return ips
 
-file_dir = './files'
-
-if not os.path.exists(file_dir):
-    os.mkdir(file_dir)
+def current_uri():
+    ip = get_ips()[0]
+    return 'http://{}:{}'.format(ip, port)
 
 @route('/qr.png')
 def qr():
-    ip = get_ips()[0]
-
-    qr_img = qrcode.make('http://{}:{}'.format(ip, port))
+    qr_img = qrcode.make(current_uri())
 
     img_io = BytesIO()
     qr_img.save(img_io, 'PNG')
@@ -84,14 +87,14 @@ def get_receive_links():
     r = ''
 
     for f in receivable_files():
-        r += "<div><a href=\"/recv/{}\">{}</a></div>".format(f.name, f.name)
+        r += "<a class=\"download-link button\" href=\"/recv/{}\">{}</a>".format(f.name, f.name)
 
     return r
 
 @get('/')
 def index():
     network_code = r"""
-        <div class="container">
+        <div class="container align-right">
             <h2>Scan to connect to this laptop's hotspot:</h2>
             <img src="/network.png" />
         </div>
@@ -100,19 +103,14 @@ def index():
     if not show_hotspot_code:
         network_code = ""
 
+    current_ip = get_ips()[0]
+
     return r"""
 <html>
     <head>
             <meta charset="utf-8">
             <title>Beam Me Up!</title>
-            <style>
-                div.container {
-                    display: inline-block;
-                }
-                h2 {
-                    text-align: center;
-                }
-            </style>
+            <link rel="stylesheet" href="/static/style.css">
     </head>
     <script src="js/jquery-3.3.1.js"></script>
     <script src="js/vendor/jquery.ui.widget.js"></script>
@@ -125,7 +123,7 @@ def index():
                 maxChunkSize: 1000000,
                 add: function(e, data) {
                     data.context = $('<button/>').text('Upload \''+data.files[0].name+'\'')
-                        .appendTo(document.body)
+                        .appendTo('#upload-container')
                         .click(function() {
                             data.context = $('<p/>').text('Uploading...').replaceAll($(this));
                             data.submit();
@@ -144,21 +142,29 @@ def index():
         $(upload)
     </script>
     <body>
-        <h1>Beam Me Up! -- a simple file transfer application</h1>
-        <form action="/xmit" method="post" enctype="multipart/form-data">
-            <div>
-                Select a file: <input type="file" name="upload" id="upload" />
+        <div class="overall-container">
+            <div class="main-container">
+                <h1>Beam Me Up! -- a simple file transfer application</h1>
+                <form class="container align-left" action="/xmit" method="post" enctype="multipart/form-data">
+                    <h2>Upload Files:</h2>
+                    <div class="upload-container" id="upload-container">
+                        <input type="file" name="upload" id="upload" />
+                    </div>
+                </form>
+                <div class="container align-right">
+                    <h2>Receivable files:</h2>
+                    <div class="download-container">
+                        """+get_receive_links()+r"""
+                    </div>
+                </div>
             </div>
-            <div id="progress"></div>
-        </form>
-        <div>
-        Receivable files:
-        """+get_receive_links()+r"""
-        </div>
-        """+network_code+"""
-        <div class="container">
-            <h2>Scan to go to this webpage:</h2>
-            <img src="/qr.png" />
+            <div class="code-container">
+                <div class="container align-left">
+                    <h2>Scan to go to this webpage (<a href="""""+current_uri()+r"""">"""+current_uri()+r"""</a>):</h2>
+                    <img src="/qr.png" />
+                </div>
+                """+network_code+"""
+            </div>
         </div>
     </body>
 </html>

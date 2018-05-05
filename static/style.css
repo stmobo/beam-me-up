@@ -1,0 +1,80 @@
+div.container {
+    display: inline-block;
+    vertical-align:top;
+}
+
+a.button {
+    -webkit-appearance: button;
+    -moz-appearance: button;
+    appearance: button;
+
+    text-decoration: none;
+    color: initial;
+
+    padding-left: 0.25em;
+    padding-right: 0.25em;
+
+    margin-left: 0.5em;
+    margin-right: 0.5em;
+}
+
+.main-container {
+    overflow: auto;
+    clear: both;
+}
+
+.code-container {
+    overflow: auto;
+    clear: both;
+}
+
+.main-container > h1 {
+    text-align: center;
+}
+
+.overall-container {
+    margin-left: 10em;
+    margin-right: 10em;
+    margin-top: 5em;
+}
+
+.upload-container {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.download-container {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.download-link {
+
+}
+
+.centered {
+    text-align: center;
+}
+
+.align-left {
+    float:left;
+    width: 50%
+}
+
+.align-left > h2 {
+    text-align: center;
+}
+
+.align-right {
+    float: right;
+    width: 50%
+}
+
+.align-right > h2 {
+    text-align: center;
+}
+
+.container > img {
+    display: block;
+    margin: 0 auto;
+}
